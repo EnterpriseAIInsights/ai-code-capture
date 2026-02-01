@@ -29,7 +29,17 @@ The extension differentiates between human and AI/automated inputs using a heuri
   - Human Contribution % (and line count)
   - AI Contribution % (and line count)
 
-## Setup & Installation
+## Installation
+
+1.  Download the `.vsix` release file.
+2.  Open VS Code.
+3.  Go to the **Extensions** view (`Ctrl+Shift+X`).
+4.  Click the **...** (Views and More Actions) menu at the top of the view.
+5.  Select **Install from VSIX...**.
+6.  Locate and select the `ai-code-capture-0.0.1.vsix` file.
+7.  Reload VS Code if prompted.
+
+## Development Setup
 
 1.  Clone the repository.
 2.  Install dependencies:

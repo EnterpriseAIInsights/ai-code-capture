@@ -17,8 +17,13 @@ export class GitIntegration {
             return;
         }
 
+        if (!gitExtension.isActive) {
+            await gitExtension.activate();
+        }
+
         const git = gitExtension.exports.getAPI(1);
         if (!git) {
+            console.log('Git API not available');
             return;
         }
 
@@ -34,8 +39,9 @@ export class GitIntegration {
     private setupRepositories(repositories: any[]) {
         for (const repo of repositories) {
             this.disposables.push(repo.onDidRunOperation(async (op: any) => {
-                // Check for Push operation
-                if (op.operation.kind === 'Push') {
+                const kind = op.operation?.kind ?? op.operation;
+                console.log('Git operation:', kind);
+                if (kind === 'Push') {
                     await this.handlePush(repo);
                 }
             }));

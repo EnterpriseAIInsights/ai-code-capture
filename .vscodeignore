@@ -3,3 +3,4 @@
 src/**
 .gitignore
 vsc-extension-quickstart.md
+!icon/**

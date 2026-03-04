@@ -5,7 +5,7 @@
 ## Summary Flow
 
 ```mermaid
-flowchart LR
+flowchart TD
     classDef start   fill:#1e3a5f,stroke:#4a90d9,color:#ffffff,font-weight:bold
     classDef track   fill:#1a4731,stroke:#4caf50,color:#ffffff
     classDef classify fill:#4a3000,stroke:#ffa726,color:#ffffff,font-weight:bold

@@ -126,7 +126,3 @@ No manual configuration is required. The extension automatically detects your Gi
    - Open the Output panel (`Ctrl+Shift+U`).
    - Select "Git" from the dropdown.
    - Look for "Git extension activated" message.
-
-3. Check if Git configuration is set:
-   - Run `git config user.name` in the terminal.
-   - If it returns an empty string, set it using `git config user.name "Your Name"`.

@@ -30,6 +30,16 @@
       }
     ],
     [
+      "@semantic-release/npm",
+      { "npmPublish": false }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "npx @vscode/vsce package --no-dependencies --baseContentUrl https://github.com/${GITHUB_REPOSITORY}/raw/main --baseImagesUrl https://github.com/${GITHUB_REPOSITORY}/raw/main"
+      }
+    ],
+    [
       "@semantic-release/github",
       {
         "assets": [

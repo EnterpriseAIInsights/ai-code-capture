@@ -1,4 +1,4 @@
-name: Release
+name: semantic-release
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   release:
-    name: Semantic Release
+    name: semantic-release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

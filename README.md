@@ -121,8 +121,3 @@ No manual configuration is required. The extension automatically detects your Gi
    - Open the Output panel (`Ctrl+Shift+U`).
    - Select "AI Code Capture" from the dropdown.
    - Look for "Extension activated" message.
-
-2. Check if Git extension is activated:
-   - Open the Output panel (`Ctrl+Shift+U`).
-   - Select "Git" from the dropdown.
-   - Look for "Git extension activated" message.

@@ -4,13 +4,28 @@ export class CodeTracker {
     private disposables: vscode.Disposable[] = [];
     private context: vscode.ExtensionContext;
     private stats: Record<string, { humanLines: number; aiLines: number }> = {};
+    private statusBar: vscode.StatusBarItem;
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
+        this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+        this.statusBar.tooltip = 'AI Code Capture: Human vs AI line contributions';
+        this.statusBar.show();
         this.loadState();
+        this.updateStatusBar();
         this.disposables.push(
             vscode.workspace.onDidChangeTextDocument(this.onDocumentChange.bind(this))
         );
+    }
+
+    private updateStatusBar() {
+        let totalHuman = 0;
+        let totalAI = 0;
+        for (const file in this.stats) {
+            totalHuman += this.stats[file].humanLines;
+            totalAI += this.stats[file].aiLines;
+        }
+        this.statusBar.text = `$(person) ${totalHuman}L  $(robot) ${totalAI}L`;
     }
 
     // Load the state from the workspace state
@@ -78,6 +93,7 @@ export class CodeTracker {
         }
 
         this.saveState();
+        this.updateStatusBar();
     }
 
     // Get the stats
@@ -87,6 +103,7 @@ export class CodeTracker {
 
     // Dispose the tracker
     public dispose() {
+        this.statusBar.dispose();
         this.disposables.forEach(d => d.dispose());
     }
 }

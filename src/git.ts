@@ -55,18 +55,29 @@ export class GitIntegration {
     }
 
     private setupTerminalPushWatcher(repo: any) {
-        const watcher = vscode.workspace.createFileSystemWatcher(
+        // Watch individual ref files (unpacked refs)
+        const refsWatcher = vscode.workspace.createFileSystemWatcher(
             new vscode.RelativePattern(repo.rootUri, '.git/refs/remotes/**')
         );
-        this.disposables.push(watcher.onDidChange(async () => {
+        this.disposables.push(refsWatcher.onDidChange(async () => {
             console.log('Terminal push detected via remote refs change');
             await this.handlePush(repo);
         }));
-        this.disposables.push(watcher.onDidCreate(async () => {
+        this.disposables.push(refsWatcher.onDidCreate(async () => {
             console.log('Terminal push detected via remote refs create');
             await this.handlePush(repo);
         }));
-        this.disposables.push(watcher);
+        this.disposables.push(refsWatcher);
+
+        // Watch packed-refs (modern git stores refs here after gc)
+        const packedRefsWatcher = vscode.workspace.createFileSystemWatcher(
+            new vscode.RelativePattern(repo.rootUri, '.git/packed-refs')
+        );
+        this.disposables.push(packedRefsWatcher.onDidChange(async () => {
+            console.log('Terminal push detected via packed-refs change');
+            await this.handlePush(repo);
+        }));
+        this.disposables.push(packedRefsWatcher);
     }
 
     private async handlePush(repo: any) {
@@ -86,12 +97,8 @@ export class GitIntegration {
         }
 
         const total = totalHuman + totalAI;
-        if (total === 0) {
-            return;
-        }
-
-        const humanPct = ((totalHuman / total) * 100).toFixed(1);
-        const aiPct = ((totalAI / total) * 100).toFixed(1);
+        const humanPct = total > 0 ? ((totalHuman / total) * 100).toFixed(1) : '0.0';
+        const aiPct = total > 0 ? ((totalAI / total) * 100).toFixed(1) : '0.0';
 
         let userName = 'Unknown';
         try {

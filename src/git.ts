@@ -4,6 +4,8 @@ import { CodeTracker } from './tracker';
 export class GitIntegration {
     private tracker: CodeTracker;
     private disposables: vscode.Disposable[] = [];
+    private lastPushTime: number = 0;
+    private readonly PUSH_DEBOUNCE_MS = 2000;
 
     constructor(tracker: CodeTracker) {
         this.tracker = tracker;
@@ -38,6 +40,7 @@ export class GitIntegration {
 
     private setupRepositories(repositories: any[]) {
         for (const repo of repositories) {
+            // VS Code Git UI push detection
             this.disposables.push(repo.onDidRunOperation(async (op: any) => {
                 const kind = op.operation?.kind ?? op.operation;
                 console.log('Git operation:', kind);
@@ -45,10 +48,34 @@ export class GitIntegration {
                     await this.handlePush(repo);
                 }
             }));
+
+            // Terminal push detection via remote refs file watcher
+            this.setupTerminalPushWatcher(repo);
         }
     }
 
+    private setupTerminalPushWatcher(repo: any) {
+        const watcher = vscode.workspace.createFileSystemWatcher(
+            new vscode.RelativePattern(repo.rootUri, '.git/refs/remotes/**')
+        );
+        this.disposables.push(watcher.onDidChange(async () => {
+            console.log('Terminal push detected via remote refs change');
+            await this.handlePush(repo);
+        }));
+        this.disposables.push(watcher.onDidCreate(async () => {
+            console.log('Terminal push detected via remote refs create');
+            await this.handlePush(repo);
+        }));
+        this.disposables.push(watcher);
+    }
+
     private async handlePush(repo: any) {
+        const now = Date.now();
+        if (now - this.lastPushTime < this.PUSH_DEBOUNCE_MS) {
+            return;
+        }
+        this.lastPushTime = now;
+
         const stats = this.tracker.getStats();
         let totalHuman = 0;
         let totalAI = 0;

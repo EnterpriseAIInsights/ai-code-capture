@@ -112,3 +112,21 @@ No manual configuration is required. The extension automatically detects your Gi
 3. Open any file and start coding.
 4. Open the terminal and run `git push`.
 5. Check the output for the extension's report.
+
+## Troubleshooting
+
+### Extension not reporting after git push
+
+1. Check if the extension is activated:
+   - Open the Output panel (`Ctrl+Shift+U`).
+   - Select "AI Code Capture" from the dropdown.
+   - Look for "Extension activated" message.
+
+2. Check if Git extension is activated:
+   - Open the Output panel (`Ctrl+Shift+U`).
+   - Select "Git" from the dropdown.
+   - Look for "Git extension activated" message.
+
+3. Check if Git configuration is set:
+   - Run `git config user.name` in the terminal.
+   - If it returns an empty string, set it using `git config user.name "Your Name"`.

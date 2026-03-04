@@ -8,24 +8,24 @@
 flowchart LR
     classDef start   fill:#1e3a5f,stroke:#4a90d9,color:#ffffff,font-weight:bold
     classDef track   fill:#1a4731,stroke:#4caf50,color:#ffffff
+    classDef classify fill:#4a3000,stroke:#ffa726,color:#ffffff,font-weight:bold
     classDef human   fill:#1a3a5c,stroke:#42a5f5,color:#ffffff
     classDef ai      fill:#3a1a1a,stroke:#ef5350,color:#ffffff
     classDef git     fill:#2e1a47,stroke:#ab47bc,color:#ffffff
-    classDef report  fill:#4a3000,stroke:#ffa726,color:#ffffff,font-weight:bold
+    classDef report  fill:#3a2500,stroke:#ffa726,color:#ffffff,font-weight:bold
 
-    A([VS Code Activates]):::start
-    B[Track document\nchanges]:::track
-    C{Who made\nthe change?}:::track
-    D[Human\nTyping · Paste · Undo/Redo]:::human
-    E[AI\nBulk Insert]:::ai
-    F[Persist stats\nper file]:::track
+    A([VS Code\nActivates]):::start
+    B[Track Document\nChanges]:::track
+    C[Classify Change\nHuman · AI]:::classify
+    D[Human Lines\nTyping · Paste · Undo]:::human
+    E[AI Lines\nBulk Insert]:::ai
+    F[Persist Stats\nper File]:::track
     G([Git Push]):::git
-    H[Aggregate\nhuman vs AI lines]:::git
-    I[Show push report\nHuman X% · AI Y%]:::report
+    H[Aggregate\nTotals]:::git
+    I[Show Report\nHuman X% · AI Y%]:::report
 
-    A --> B --> C
-    C -- Human --> D --> F
-    C -- AI --> E --> F
+    A --> B --> C --> D --> F
+    C --> E --> F
     F --> G --> H --> I
 ```
 

@@ -102,11 +102,3 @@ This project uses `pre-commit` to ensure code quality.
 ## Configuration
 
 No manual configuration is required. The extension automatically detects your Git user and tracks all text file changes in the workspace.
-
-# Testing
-
-## Manual Testing
-
-1. Open the project in VS Code.
-2. Press `F5` to open a new VS Code window with the extension loaded.
-3. Open any file and start coding.

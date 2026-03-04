@@ -1,5 +1,6 @@
 {
   "name": "ai-code-capture",
+  "publisher": "dilip-samanta",
   "displayName": "AI Code Capture",
   "description": "Track Human vs AI code contributions",
   "version": "0.0.1",

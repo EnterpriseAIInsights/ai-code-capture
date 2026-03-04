@@ -15,7 +15,6 @@ export class GitIntegration {
     private async initialize() {
         const gitExtension = vscode.extensions.getExtension('vscode.git');
         if (!gitExtension) {
-            console.log('Git extension not found');
             return;
         }
 
@@ -25,7 +24,6 @@ export class GitIntegration {
 
         const git = gitExtension.exports.getAPI(1);
         if (!git) {
-            console.log('Git API not available');
             return;
         }
 
@@ -43,7 +41,6 @@ export class GitIntegration {
             // VS Code Git UI push detection
             this.disposables.push(repo.onDidRunOperation(async (op: any) => {
                 const kind = op.operation?.kind ?? op.operation;
-                console.log('Git operation:', kind);
                 if (kind === 'Push') {
                     await this.handlePush(repo);
                 }
@@ -60,11 +57,9 @@ export class GitIntegration {
             new vscode.RelativePattern(repo.rootUri, '.git/refs/remotes/**')
         );
         this.disposables.push(refsWatcher.onDidChange(async () => {
-            console.log('Terminal push detected via remote refs change');
             await this.handlePush(repo);
         }));
         this.disposables.push(refsWatcher.onDidCreate(async () => {
-            console.log('Terminal push detected via remote refs create');
             await this.handlePush(repo);
         }));
         this.disposables.push(refsWatcher);
@@ -74,7 +69,6 @@ export class GitIntegration {
             new vscode.RelativePattern(repo.rootUri, '.git/packed-refs')
         );
         this.disposables.push(packedRefsWatcher.onDidChange(async () => {
-            console.log('Terminal push detected via packed-refs change');
             await this.handlePush(repo);
         }));
         this.disposables.push(packedRefsWatcher);
@@ -113,7 +107,9 @@ export class GitIntegration {
         // Display the report
         const message = `Code Capture: Pushed by ${userName}. Human: ${humanPct}% (${totalHuman} lines), AI: ${aiPct}% (${totalAI} lines)`;
         vscode.window.showInformationMessage(message);
-        console.log(message);
+
+        // Reset counters for the next push cycle
+        await this.tracker.resetStats();
     }
 
     public dispose() {

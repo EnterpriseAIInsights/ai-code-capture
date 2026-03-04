@@ -47,8 +47,6 @@ export class CodeTracker {
 
         // Handle Undo/Redo
         if (event.reason === vscode.TextDocumentChangeReason.Undo || event.reason === vscode.TextDocumentChangeReason.Redo) {
-            // Undo/Redo are human actions
-            console.log('Human Event: Undo/Redo');
             return;
         }
 
@@ -56,9 +54,6 @@ export class CodeTracker {
             if (change.text.length > 0) {
                 // Insertion
                 await this.analyzeInsertion(event.document, change.text);
-            } else {
-                // Deletion
-                console.log('Human Event: Deletion');
             }
         }
     }
@@ -72,9 +67,7 @@ export class CodeTracker {
 
         const newLines = (text.match(/\n/g) || []).length;
         if (newLines === 0 && text.length < 50) {
-            // Typing
             this.stats[filePath].humanLines += newLines; // 0
-            console.log('Human Event: Typing');
             return;
         }
 
@@ -82,14 +75,11 @@ export class CodeTracker {
             const clipboardText = await vscode.env.clipboard.readText();
             if (text === clipboardText) {
                 this.stats[filePath].humanLines += newLines;
-                console.log(`Human Event: Paste (${newLines} lines)`);
             } else {
                 this.stats[filePath].aiLines += newLines;
-                console.log(`AI Event: Bulk Insert (${newLines} lines)`);
             }
         } else {
              this.stats[filePath].humanLines += newLines;
-             console.log('Human Event: Typing');
         }
 
         this.saveState();
@@ -99,6 +89,13 @@ export class CodeTracker {
     // Get the stats
     public getStats() {
         return this.stats;
+    }
+
+    // Reset stats after a push
+    public async resetStats() {
+        this.stats = {};
+        await this.saveState();
+        this.updateStatusBar();
     }
 
     // Dispose the tracker

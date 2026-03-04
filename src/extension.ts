@@ -6,7 +6,6 @@ let tracker: CodeTracker;
 let gitIntegration: GitIntegration;
 
 export function activate(context: vscode.ExtensionContext) {
-	console.log('AI Code Capture Active');
     tracker = new CodeTracker(context);
     gitIntegration = new GitIntegration(tracker);
 

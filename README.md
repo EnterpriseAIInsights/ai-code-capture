@@ -14,15 +14,15 @@ flowchart TD
     classDef git     fill:#2e1a47,stroke:#ab47bc,color:#ffffff
     classDef report  fill:#3a2500,stroke:#ffa726,color:#ffffff,font-weight:bold
 
-    A([VS Code\nActivates]):::start
-    B[Track Document\nChanges]:::track
-    C[Classify Change\nHuman · AI]:::classify
-    D[Human Lines\nTyping · Paste · Undo]:::human
-    E[AI Lines\nBulk Insert]:::ai
-    F[Persist Stats\nper File]:::track
+    A([VS Code<br/>Activates]):::start
+    B[Track Document<br/>Changes]:::track
+    C[Classify Change<br/>Human · AI]:::classify
+    D[Human Lines<br/>Typing · Paste · Undo]:::human
+    E[AI Lines<br/>Bulk Insert]:::ai
+    F[Persist Stats<br/>per File]:::track
     G([Git Push]):::git
-    H[Aggregate\nTotals]:::git
-    I[Show Report\nHuman X% · AI Y%]:::report
+    H[Aggregate<br/>Totals]:::git
+    I[Show Report<br/>Human X% · AI Y%]:::report
 
     A --> B --> C --> D --> F
     C --> E --> F

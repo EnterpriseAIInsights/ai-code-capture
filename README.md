@@ -110,5 +110,3 @@ No manual configuration is required. The extension automatically detects your Gi
 1. Open the project in VS Code.
 2. Press `F5` to open a new VS Code window with the extension loaded.
 3. Open any file and start coding.
-4. Open the terminal and run `git push`.
-5. Check the output for the extension's report.

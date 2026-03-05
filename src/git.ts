@@ -17,6 +17,7 @@ export class GitIntegration {
     private async initialize() {
         const gitExtension = vscode.extensions.getExtension('vscode.git');
         if (!gitExtension) {
+            console.error('[AI Code Capture] vscode.git extension not found — push detection disabled.');
             return;
         }
 
@@ -26,13 +27,17 @@ export class GitIntegration {
 
         const git = gitExtension.exports.getAPI(1);
         if (!git) {
+            console.error('[AI Code Capture] Failed to get Git API — push detection disabled.');
             return;
         }
 
         if (git.repositories.length > 0) {
+            console.log(`[AI Code Capture] Found ${git.repositories.length} repository(ies) — setting up listeners.`);
             this.setupRepositories(git.repositories);
         } else {
+            console.log('[AI Code Capture] No repositories open yet — waiting for onDidOpenRepository.');
             git.onDidOpenRepository((repo: any) => {
+                console.log('[AI Code Capture] Repository opened — setting up listeners.');
                 this.setupRepositories([repo]);
             });
         }
@@ -43,6 +48,7 @@ export class GitIntegration {
             // VS Code Git UI push detection
             this.disposables.push(repo.onDidRunOperation(async (op: any) => {
                 const kind = op.operation?.kind ?? op.operation;
+                console.log(`[AI Code Capture] Git operation detected: "${kind}"`);
                 if (kind === 'Push') {
                     await this.handlePush(repo);
                 }
@@ -79,12 +85,15 @@ export class GitIntegration {
     private async handlePush(repo: any) {
         const now = Date.now();
         if (now - this.lastPushTime < this.PUSH_DEBOUNCE_MS) {
+            console.log('[AI Code Capture] handlePush: skipped (debounce).');
             return;
         }
         this.lastPushTime = now;
+        console.log('[AI Code Capture] handlePush: triggered.');
 
         // ── 1. Aggregate human/AI line counts from tracker ─────────────────
         const stats = this.tracker.getStats();
+        console.log('[AI Code Capture] Tracker stats:', JSON.stringify(stats));
         let totalHuman = 0;
         let totalAI = 0;
         let aiSessionsCount = 0;
@@ -105,6 +114,7 @@ export class GitIntegration {
         const total    = totalHuman + totalAI;
         const humanPct = total > 0 ? ((totalHuman / total) * 100).toFixed(1) : '0.0';
         const aiPct    = total > 0 ? ((totalAI    / total) * 100).toFixed(1) : '0.0';
+        console.log(`[AI Code Capture] Aggregated — human: ${totalHuman}, ai: ${totalAI}, files: ${filesList.length}`);
 
         // ── 2. Collect Git context ─────────────────────────────────────────
         let userName    = 'Unknown';
@@ -120,6 +130,7 @@ export class GitIntegration {
             const emailConfig = await repo.getConfig('user.email');
             if (nameConfig)  { userName  = nameConfig; }
             if (emailConfig) { userEmail = emailConfig; }
+            console.log(`[AI Code Capture] Git user — name: "${userName}", email: "${userEmail}"`);
         } catch (e) {
             console.error('[AI Code Capture] Failed to get git user config', e);
         }
@@ -130,6 +141,7 @@ export class GitIntegration {
                 branchName = head.name ?? '';
                 commitId   = head.commit ?? '';
             }
+            console.log(`[AI Code Capture] HEAD — branch: "${branchName}", commit: "${commitId}"`);
         } catch (e) {
             console.error('[AI Code Capture] Failed to get HEAD info', e);
         }
@@ -140,6 +152,7 @@ export class GitIntegration {
                 repoUrl  = remotes[0].fetchUrl ?? remotes[0].pushUrl ?? '';
                 repoName = this.extractRepoName(repoUrl);
             }
+            console.log(`[AI Code Capture] Remote — url: "${repoUrl}", name: "${repoName}"`);
         } catch (e) {
             console.error('[AI Code Capture] Failed to get remote info', e);
         }
@@ -150,8 +163,9 @@ export class GitIntegration {
             if (log && log.length > 0) {
                 commitMessage = log[0].message ?? '';
             }
+            console.log(`[AI Code Capture] Commit message: "${commitMessage}"`);
         } catch (e) {
-            // Non-fatal — commit message is optional
+            console.error('[AI Code Capture] Failed to get commit message', e);
         }
 
         // ── 3. Workspace context ───────────────────────────────────────────
@@ -190,6 +204,7 @@ export class GitIntegration {
         };
 
         // ── 7. Persist to SQLite ───────────────────────────────────────────
+        console.log('[AI Code Capture] Calling insertCommitMetrics with:', JSON.stringify(metrics));
         DatabaseService.getInstance().insertCommitMetrics(metrics);
 
         // ── 8. Show notification ───────────────────────────────────────────

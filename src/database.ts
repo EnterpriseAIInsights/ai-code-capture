@@ -124,6 +124,7 @@ export class DatabaseService {
      * All computed/derived fields are calculated here automatically.
      */
     public insertCommitMetrics(metrics: CommitMetrics): void {
+        console.log(`[AI Code Capture] insertCommitMetrics called — db ready: ${!!this.db}, stmt ready: ${!!this.insertStmt}`);
         if (!this.db || !this.insertStmt) {
             console.error('[AI Code Capture] DatabaseService not initialised. Call initialize() first.');
             return;

@@ -36,7 +36,7 @@ flowchart TD
 The extension differentiates between human and AI/automated inputs using a heuristic engine:
 
 - **Human Events**:
-  - **Typing**: Single character insertion.
+  - **Typing**: Single character insertions.
   - **Pasting**: Content matching the current system clipboard.
   - **Undo/Redo**: Explicitly preserved as human actions.
 - **AI Events**:

@@ -44,17 +44,19 @@ The extension differentiates between human and AI/automated inputs using a heuri
 
 ### 2. Data Persistence
 
-- Metrics are stored securely in the **Workspace State**, ensuring they persist across VS Code reloads.
-- Data is tracked per file.
+- In-session metrics are stored in the **Workspace State**, persisting across VS Code reloads.
+- On every `git push`, metrics are written to a **SQLite database** (`analytics.db`) for long-term analytics.
 
 ### 3. Git Integration
 
-- **Automated Reporting**: Listens for `git push` operations.
-- **Identity Capture**: Detects the `user.name` from the Git configuration.
+- **Automated Reporting**: Listens for `git push` operations (both from VS Code UI and terminal).
+- **Identity Capture**: Captures `user.name`, `user.email`, branch name, repo URL, and latest commit message from Git.
+- **AI Tool Detection**: Identifies the active AI assistant (Copilot, Cursor, Gemini).
 - **Feedback**: Displays a summary notification with:
-  - User Identity
-  - Human Contribution % (and line count)
-  - AI Contribution % (and line count)
+  - User identity
+  - Human contribution % (and line count)
+  - AI contribution % (and line count)
+- **Metrics persisted per push**: AI sessions count, largest AI block, session duration, dominant language, and workspace ID.
 
 ## Installation
 
@@ -82,9 +84,8 @@ The extension differentiates between human and AI/automated inputs using a heuri
 1.  Press `F5` to open a new VS Code window with the extension loaded.
 2.  Open any file and start coding.
 
-### Testing
+### Linting
 
-- **Run Tests**: `npm test`
 - **Linting**: `npm run lint`
 
 ### Pre-commit Hooks
@@ -101,4 +102,21 @@ This project uses `pre-commit` to ensure code quality.
 
 ## Configuration
 
-No manual configuration is required. The extension automatically detects your Git user and tracks all text file changes in the workspace.
+### Database Setup (Required)
+
+The extension writes analytics to a SQLite database that **must be created manually** before first use:
+
+1. Run the scripts in `db-scripts/` against your SQLite database:
+   ```bash
+   sqlite3 analytics.db < db-scripts/001_create_commit_metrics.sql
+   sqlite3 analytics.db < db-scripts/002_create_indexes.sql
+   ```
+2. Place `analytics.db` in a directory of your choice (default: `c:\ai-code-analytics`).
+
+### Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| `ai-code-capture.databasePath` | `c:\ai-code-analytics` | Directory where `analytics.db` is located |
+
+Update this in VS Code via **File → Preferences → Settings** and search for `AI Code Capture`.

@@ -15,7 +15,7 @@ jobs:
       - uses: pre-commit/action@v3.0.1
 
   secrets:
-    name: Secret Scanning
+    name: secret scanning
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

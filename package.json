@@ -16,36 +16,35 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "ai-code-capture.helloWorld",
-        "title": "Hello World"
+    "configuration": {
+      "title": "AI Code Capture",
+      "properties": {
+        "ai-code-capture.databasePath": {
+          "type": "string",
+          "default": "c:\\ai-code-analytics",
+          "description": "Directory where the analytics SQLite database (analytics.db) will be stored.",
+          "scope": "application"
+        }
       }
-    ]
+    },
+    "commands": []
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "lint": "eslint src --ext ts"
   },
   "dependencies": {
-    "serialize-javascript": ">=7.0.3",
-    "minimatch": ">=9.0.7"
+    "better-sqlite3": "^12.6.2"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.6",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "20.x",
+    "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "eslint": "^8.56.0",
-    "glob": "^8.1.0",
-    "mocha": "^10.2.0",
-    "typescript": "^5.3.3",
-    "@vscode/test-electron": "^2.3.8"
+    "typescript": "^5.3.3"
   }
 }

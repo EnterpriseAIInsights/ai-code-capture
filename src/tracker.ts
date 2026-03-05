@@ -1,10 +1,18 @@
 import * as vscode from 'vscode';
 
+interface FileStat {
+    humanLines: number;
+    aiLines: number;
+    aiSessions: number;       // number of distinct AI insertion bursts
+    largestAiBlock: number;   // largest single AI-inserted chunk (lines)
+}
+
 export class CodeTracker {
     private disposables: vscode.Disposable[] = [];
     private context: vscode.ExtensionContext;
-    private stats: Record<string, { humanLines: number; aiLines: number }> = {};
+    private stats: Record<string, FileStat> = {};
     private statusBar: vscode.StatusBarItem;
+    private sessionStart: number = Date.now();
 
     constructor(context: vscode.ExtensionContext) {
         this.context = context;
@@ -40,19 +48,16 @@ export class CodeTracker {
 
     // Handle document changes
     private async onDocumentChange(event: vscode.TextDocumentChangeEvent) {
-        // Ignore changes to output channels or log files if possible
         if (event.document.uri.scheme !== 'file') {
             return;
         }
 
-        // Handle Undo/Redo
         if (event.reason === vscode.TextDocumentChangeReason.Undo || event.reason === vscode.TextDocumentChangeReason.Redo) {
             return;
         }
 
         for (const change of event.contentChanges) {
             if (change.text.length > 0) {
-                // Insertion
                 await this.analyzeInsertion(event.document, change.text);
             }
         }
@@ -62,24 +67,30 @@ export class CodeTracker {
     private async analyzeInsertion(document: vscode.TextDocument, text: string) {
         const filePath = document.uri.fsPath;
         if (!this.stats[filePath]) {
-            this.stats[filePath] = { humanLines: 0, aiLines: 0 };
+            this.stats[filePath] = { humanLines: 0, aiLines: 0, aiSessions: 0, largestAiBlock: 0 };
         }
 
         const newLines = (text.match(/\n/g) || []).length;
         if (newLines === 0 && text.length < 50) {
-            this.stats[filePath].humanLines += newLines; // 0
+            // single-character human keypress — no new lines, ignore
             return;
         }
 
         if (text.length > 10) {
             const clipboardText = await vscode.env.clipboard.readText();
             if (text === clipboardText) {
+                // Human paste
                 this.stats[filePath].humanLines += newLines;
             } else {
+                // AI insertion: track session count and largest block
                 this.stats[filePath].aiLines += newLines;
+                this.stats[filePath].aiSessions += 1;
+                if (newLines > this.stats[filePath].largestAiBlock) {
+                    this.stats[filePath].largestAiBlock = newLines;
+                }
             }
         } else {
-             this.stats[filePath].humanLines += newLines;
+            this.stats[filePath].humanLines += newLines;
         }
 
         this.saveState();
@@ -87,13 +98,22 @@ export class CodeTracker {
     }
 
     // Get the stats
-    public getStats() {
+    public getStats(): Record<string, FileStat> {
         return this.stats;
+    }
+
+    /**
+     * Returns the number of minutes elapsed since the session (first edit or
+     * last reset) began — used by GitIntegration for analytics.
+     */
+    public getSessionDurationMins(): number {
+        return (Date.now() - this.sessionStart) / 60_000;
     }
 
     // Reset stats after a push
     public async resetStats() {
         this.stats = {};
+        this.sessionStart = Date.now(); // start a fresh session timer
         await this.saveState();
         this.updateStatusBar();
     }

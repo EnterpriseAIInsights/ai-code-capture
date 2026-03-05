@@ -36,7 +36,7 @@ flowchart TD
 The extension differentiates between human and AI/automated inputs using a heuristic engine:
 
 - **Human Events**:
-  - **Typing**: Single character insertions.
+  - **Typing**: Single character insertion.
   - **Pasting**: Content matching the current system clipboard.
   - **Undo/Redo**: Explicitly preserved as human actions.
 - **AI Events**:
@@ -115,8 +115,8 @@ The extension writes analytics to a SQLite database that **must be created manua
 
 ### Settings
 
-| Setting | Default | Description |
-|---|---|---|
+| Setting                        | Default                | Description                               |
+| ------------------------------ | ---------------------- | ----------------------------------------- |
 | `ai-code-capture.databasePath` | `c:\ai-code-analytics` | Directory where `analytics.db` is located |
 
 Update this in VS Code via **File → Preferences → Settings** and search for `AI Code Capture`.

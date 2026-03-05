@@ -33,16 +33,11 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts",
-    "rebuild": "electron-rebuild -f -w better-sqlite3"
-  },
-  "dependencies": {
-    "better-sqlite3": "^12.6.2"
+    "lint": "eslint src --ext ts"
   },
   "devDependencies": {
-    "@electron/rebuild": "^4.0.3",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "20.x",
+    "@types/sql.js": "^1.4.9",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
@@ -51,5 +46,8 @@
   },
   "overrides": {
     "minimatch": ">=9.0.7"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.1"
   }
 }

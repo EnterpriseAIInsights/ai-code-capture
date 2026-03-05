@@ -1,11 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as BetterSqlite3 from 'better-sqlite3';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Database = require('better-sqlite3') as typeof BetterSqlite3;
-type DbInstance = BetterSqlite3.Database;
-type DbStatement = BetterSqlite3.Statement;
-
+import initSqlJs, { Database } from 'sql.js';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,8 +46,8 @@ export interface CommitMetrics {
 export class DatabaseService {
 
     private static instance: DatabaseService | null = null;
-    private db: DbInstance | null = null;
-    private insertStmt: DbStatement | null = null;
+    private db: Database | null = null;
+    private dbPath: string | null = null;
 
     // ── Singleton ──────────────────────────────────────────────────────────
     public static getInstance(): DatabaseService {
@@ -66,12 +61,12 @@ export class DatabaseService {
 
     // ── Initialisation ─────────────────────────────────────────────────────
     /**
-     * Opens (or creates) the SQLite database and ensures the schema exists.
-     * Must be called once during extension activation before any inserts.
+     * Loads the SQLite database into memory via sql.js (pure WASM — no native
+     * compilation required). Must be awaited once during extension activation.
      *
-     * @param dbDir  Directory where analytics.db will live (e.g. "c:\ai-code-analytics")
+     * @param dbDir  Directory where analytics.db lives (e.g. "c:\ai-code-analytics")
      */
-    public initialize(dbDir: string = 'c:\\ai-code-analytics'): void {
+    public async initialize(dbDir: string = 'c:\\ai-code-analytics'): Promise<void> {
         if (this.db) {
             return; // already initialised
         }
@@ -85,47 +80,34 @@ export class DatabaseService {
             throw new Error(msg);
         }
 
-        this.db = new Database(dbPath);
+        // Locate the WASM file bundled alongside sql.js
+        const sqlJsDistDir = path.dirname(require.resolve('sql.js/dist/sql-wasm.js'));
+        const SQL = await initSqlJs({
+            locateFile: (filename: string) => path.join(sqlJsDistDir, filename),
+        });
 
-        // WAL mode for better concurrent write performance
-        this.db.pragma('journal_mode = WAL');
-
-        // Pre-compile the insert statement for performance
-        this.insertStmt = this.db.prepare(`
-            INSERT INTO commit_metrics (
-                commit_id, user_name, user_email, branch_name,
-                repo_name, repo_url,
-                human_lines_added, ai_lines_added, total_lines_added,
-                ai_contribution_pct, human_contribution_pct,
-                files_changed, files_list, commit_message,
-                ai_tool_detected, ai_confidence_score, ai_sessions_count, largest_ai_block,
-                session_duration_mins, workspace_id, project_language,
-                day_of_week, hour_of_day, pushed_at
-            ) VALUES (
-                @commitId, @userName, @userEmail, @branchName,
-                @repoName, @repoUrl,
-                @humanLinesAdded, @aiLinesAdded, @totalLinesAdded,
-                @aiContributionPct, @humanContributionPct,
-                @filesChanged, @filesList, @commitMessage,
-                @aiToolDetected, @aiConfidenceScore, @aiSessionsCount, @largestAiBlock,
-                @sessionDurationMins, @workspaceId, @projectLanguage,
-                @dayOfWeek, @hourOfDay, @pushedAt
-            )
-        `);
+        const fileBuffer = fs.readFileSync(dbPath);
+        this.db = new SQL.Database(fileBuffer);
+        this.dbPath = dbPath;
 
         console.log(`[AI Code Capture] Database connected at: ${dbPath}`);
     }
 
+    // ── Persist to disk ────────────────────────────────────────────────────
+    private saveToFile(): void {
+        if (!this.db || !this.dbPath) { return; }
+        const data = this.db.export();
+        fs.writeFileSync(this.dbPath, Buffer.from(data));
+    }
 
     // ── Insert ─────────────────────────────────────────────────────────────
-
     /**
      * Persists a single commit's metrics to the database.
      * All computed/derived fields are calculated here automatically.
      */
     public insertCommitMetrics(metrics: CommitMetrics): void {
-        console.log(`[AI Code Capture] insertCommitMetrics called — db ready: ${!!this.db}, stmt ready: ${!!this.insertStmt}`);
-        if (!this.db || !this.insertStmt) {
+        console.log(`[AI Code Capture] insertCommitMetrics called — db ready: ${!!this.db}`);
+        if (!this.db) {
             console.error('[AI Code Capture] DatabaseService not initialised. Call initialize() first.');
             return;
         }
@@ -136,32 +118,54 @@ export class DatabaseService {
         const humPct = total > 0 ? (metrics.humanLinesAdded / total) * 100 : 0;
 
         try {
-            this.insertStmt.run({
-                commitId:            metrics.commitId,
-                userName:            metrics.userName,
-                userEmail:           metrics.userEmail,
-                branchName:          metrics.branchName,
-                repoName:            metrics.repoName,
-                repoUrl:             metrics.repoUrl,
-                humanLinesAdded:     metrics.humanLinesAdded,
-                aiLinesAdded:        metrics.aiLinesAdded,
-                totalLinesAdded:     total,
-                aiContributionPct:   parseFloat(aiPct.toFixed(2)),
-                humanContributionPct: parseFloat(humPct.toFixed(2)),
-                filesChanged:        metrics.filesChanged,
-                filesList:           JSON.stringify(metrics.filesList),
-                commitMessage:       metrics.commitMessage,
-                aiToolDetected:      metrics.aiToolDetected,
-                aiConfidenceScore:   metrics.aiConfidenceScore,
-                aiSessionsCount:     metrics.aiSessionsCount,
-                largestAiBlock:      metrics.largestAiBlock,
-                sessionDurationMins: parseFloat(metrics.sessionDurationMins.toFixed(2)),
-                workspaceId:         metrics.workspaceId,
-                projectLanguage:     metrics.projectLanguage,
-                dayOfWeek:           now.getDay(),
-                hourOfDay:           now.getHours(),
-                pushedAt:            now.toISOString(),
+            this.db.run(`
+                INSERT INTO commit_metrics (
+                    commit_id, user_name, user_email, branch_name,
+                    repo_name, repo_url,
+                    human_lines_added, ai_lines_added, total_lines_added,
+                    ai_contribution_pct, human_contribution_pct,
+                    files_changed, files_list, commit_message,
+                    ai_tool_detected, ai_confidence_score, ai_sessions_count, largest_ai_block,
+                    session_duration_mins, workspace_id, project_language,
+                    day_of_week, hour_of_day, pushed_at
+                ) VALUES (
+                    :commitId, :userName, :userEmail, :branchName,
+                    :repoName, :repoUrl,
+                    :humanLinesAdded, :aiLinesAdded, :totalLinesAdded,
+                    :aiContributionPct, :humanContributionPct,
+                    :filesChanged, :filesList, :commitMessage,
+                    :aiToolDetected, :aiConfidenceScore, :aiSessionsCount, :largestAiBlock,
+                    :sessionDurationMins, :workspaceId, :projectLanguage,
+                    :dayOfWeek, :hourOfDay, :pushedAt
+                )
+            `, {
+                ':commitId':            metrics.commitId,
+                ':userName':            metrics.userName,
+                ':userEmail':           metrics.userEmail,
+                ':branchName':          metrics.branchName,
+                ':repoName':            metrics.repoName,
+                ':repoUrl':             metrics.repoUrl,
+                ':humanLinesAdded':     metrics.humanLinesAdded,
+                ':aiLinesAdded':        metrics.aiLinesAdded,
+                ':totalLinesAdded':     total,
+                ':aiContributionPct':   parseFloat(aiPct.toFixed(2)),
+                ':humanContributionPct': parseFloat(humPct.toFixed(2)),
+                ':filesChanged':        metrics.filesChanged,
+                ':filesList':           JSON.stringify(metrics.filesList),
+                ':commitMessage':       metrics.commitMessage,
+                ':aiToolDetected':      metrics.aiToolDetected,
+                ':aiConfidenceScore':   metrics.aiConfidenceScore,
+                ':aiSessionsCount':     metrics.aiSessionsCount,
+                ':largestAiBlock':      metrics.largestAiBlock,
+                ':sessionDurationMins': parseFloat(metrics.sessionDurationMins.toFixed(2)),
+                ':workspaceId':         metrics.workspaceId,
+                ':projectLanguage':     metrics.projectLanguage,
+                ':dayOfWeek':           now.getDay(),
+                ':hourOfDay':           now.getHours(),
+                ':pushedAt':            now.toISOString(),
             });
+
+            this.saveToFile();
             console.log(`[AI Code Capture] Metrics recorded for commit ${metrics.commitId.substring(0, 8)}`);
         } catch (err) {
             console.error('[AI Code Capture] Failed to insert commit metrics:', err);
@@ -170,13 +174,13 @@ export class DatabaseService {
 
     // ── Dispose ────────────────────────────────────────────────────────────
     /**
-     * Closes the database connection. Call from extension deactivate().
+     * Closes the database. Call from extension deactivate().
      */
     public dispose(): void {
         if (this.db) {
             this.db.close();
             this.db = null;
-            this.insertStmt = null;
+            this.dbPath = null;
             DatabaseService.instance = null;
             console.log('[AI Code Capture] Database connection closed.');
         }

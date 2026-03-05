@@ -75,14 +75,7 @@ The extension differentiates between human and AI/automated inputs using a heuri
     ```bash
     npm install
     ```
-3.  Rebuild `better-sqlite3` against VS Code's Electron runtime (**required** — without this the extension fails to activate with `Cannot find module 'better-sqlite3'`):
-    ```bash
-    # Find your Electron version: open VS Code → Help > About
-    npx electron-rebuild -v <ELECTRON_VERSION> -f -w better-sqlite3
-    # Example for VS Code 1.102:
-    npx electron-rebuild -v 35.6.0 -f -w better-sqlite3
-    ```
-4.  Open the project in VS Code.
+3.  Open the project in VS Code.
 
 ## Development
 
